@@ -1,4 +1,4 @@
 interface:
-  display_name: "Persistent Python"
-  short_description: "Use a persistent IPython workspace as the default tool bus"
-  default_prompt: "Use $persistent-python to work through the persistent IPython tool workspace."
+  display_name: "Write Prose"
+  short_description: "Critical information to read before writing prose (e.g READMEs, articles, docs, etc)"
+  default_prompt: "Use $write-prose to write effective human-sounding prose."

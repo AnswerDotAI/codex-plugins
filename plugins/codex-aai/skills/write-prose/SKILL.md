@@ -1,3 +1,8 @@
+---
+name: write-prose
+description: Critical information to read before writing prose (e.g READMEs, articles, docs, etc)
+---
+
 # Writing Prose That Doesn't Sound Like AI
 
 Guidelines for writing clear, human-sounding prose. Based on the [Anti-Slop Reference](https://github.com/NousResearch/autonovel/blob/master/ANTI-SLOP.md). Apply these when writing documentation, blog posts, READMEs, or any prose.
