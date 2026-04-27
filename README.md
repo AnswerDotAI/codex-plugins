@@ -6,6 +6,7 @@ Codex plugins and skills from Answer.AI.
 
 - `codex-aai`: bundles Answer.AI Codex skills. It currently includes:
   - `persistent-python`: use a persistent `clikernel` Python workspace during a conversation.
+  - `write-prose`: write human-sounding prose.
 
 ## Install Plugin
 
@@ -54,3 +55,4 @@ Runtime state should not be committed. Keep generated local state under ignored 
 ## License
 
 Apache-2.0.
+
