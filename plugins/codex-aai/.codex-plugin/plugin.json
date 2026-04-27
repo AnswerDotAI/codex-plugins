@@ -3,6 +3,11 @@
   "version": "0.1.0",
   "description": "Answer.AI Codex skills and tools.",
   "repository": "https://github.com/answerdotai/codex-plugins",
+  "author": {
+    "name": "Jeremy Howard, Answer.AI",
+    "url": "https://answer.ai"
+  },
+  "homepage": "https://answer.ai",
   "license": "Apache-2.0",
   "keywords": [
     "python",
