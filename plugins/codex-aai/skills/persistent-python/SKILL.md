@@ -94,19 +94,19 @@ If there is exactly one non-empty stream, display object, execute result, or err
 For multiple non-empty outputs, the body uses readable XML-ish tags with raw, unescaped body text:
 
 ```text
-<stream name="stdout">
+<stdout>
 hello
-</stream>
+</stdout>
 <display_data mime="text/markdown">
 **shown**
 </display_data>
-<execute_result mime="text/plain">
+<execute_result>
 42
 </execute_result>
 --Q7z2M
 ```
 
-For `display_data` and `execute_result`, `render_text` chooses a non-image MIME representation with `html1st=False`, so markdown is preferred over HTML and images are ignored in concise text mode. If you need rich binary output, save it to a file or inspect a smaller textual representation.
+`display_data` and `execute_result` choose a non-image MIME representation with markdown preferred over HTML, and images are ignored.
 
 ## Interaction Rules
 
@@ -116,14 +116,7 @@ When using `exec_command` / `write_stdin` with `clikernel`, raise the tool-resul
 {"max_output_tokens": 50000, "yield_time_ms": 1000}
 ```
 
-For quick requests, `yield_time_ms=1000` is usually enough to receive the whole framed response. For long-running code, set a longer yield up front. Avoid sending extra blank lines just to poll: a newline is a real single-line request in `clikernel`.
-
-Keep probes compact. Catch expected exceptions and print only the relevant summary instead of letting long tracebacks or HTML bodies fill the terminal:
-
-```python
-try: print("OK", summary)
-except Exception as e: print("ERR", type(e).__name__, str(e)[:300])
-```
+For quick requests, `yield_time_ms=1000` is usually enough to receive the whole framed response. For long-running code, set a longer yield up front. Send a blank line to just poll.
 
 Use raw triple-quoted strings by default for generated Markdown, docs, code snippets, regexes, commands, or examples:
 
@@ -142,6 +135,7 @@ For file-editing workflows, view the target slice first and make the smallest ve
 
 ## Critical Issues
 
+- Just like in jupyter, only the *last* expression is printed/returned. Therefore, e.g if you want to run doc() twice in a single kernel input, they will need `print(...)` if not the last expression.
 - Do *NOT* re-run `import` statements that you have previously run in this session. It is persistent, so once run, the import is done. Use `importlib.reload` if you modify a module and need to reload it.
 - Do *NOT* use `sys.path.insert` for any reason, ever. The environment is pre-configured with all projects being worked on already installed with `pip install -e`. All needed modules should already be in the env.
 - If the env is missing a needed module, STOP and ask the user.
