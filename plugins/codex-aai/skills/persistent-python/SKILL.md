@@ -151,18 +151,18 @@ from pyskills import list_pyskills, doc
 list_pyskills()
 ```
 
-Orient with the core docs:
+Orient with the core docs (using `print()` to avoid python repr noise):
 
 ```python
 import pyskills.skill
-doc(pyskills.skill)
+print(doc(pyskills.skill))
 ```
 
 Before using a candidate pyskill, import it and inspect the module or specific callable:
 
 ```python
 from pyskills import edit
-doc(edit)
+print(doc(edit))
 ```
 
 Run `doc(skill_module)` by itself as the first inspection step. After the module docs are clear, inspect individual functions or classes as needed.
