@@ -33,7 +33,7 @@ scripts/clikernel_repl.sh
 
 ## Protocol
 
-On startup, `clikernel` prints loading status followed by a fresh ready delimiter. The delimiter is always `--` plus 5 alphanumeric characters:
+On startup, `clikernel` prints loading status followed by a random session delimiter. The delimiter is always `--` plus 5 alphanumeric characters:
 
 ```text
 please wait, loading...
@@ -43,7 +43,7 @@ loading complete. first delimiter:
 
 Any startup warnings are printed before the first delimiter.
 
-Treat that delimiter as both the readiness signal and the current multiline terminator.
+Treat that delimiter as the readiness signal, completion signal, and multiline terminator. It stays the same until the process exits.
 
 Send a single line to execute a single-line request:
 
@@ -51,14 +51,20 @@ Send a single line to execute a single-line request:
 1+1
 ```
 
-The response body is printed, followed by a new ready delimiter:
+After the request is received, `clikernel` first prints an acknowledgement line:
+
+```text
+.
+```
+
+Then the response body is printed, followed by the same session delimiter:
 
 ```text
 2
---Q7z2M
+--aB3x9
 ```
 
-Use a bare `--` line to start multiline input. End the block with the latest ready delimiter exactly:
+Use a bare `--` line to start multiline input. End the block with the session delimiter exactly:
 
 ```text
 --
@@ -66,19 +72,20 @@ def f(x):
     return x + 1
 
 f(2)
---Q7z2M
+--aB3x9
 ```
 
-The output is followed by a fresh delimiter:
+The acknowledgement is printed before execution starts. The output is followed by the same session delimiter:
 
 ```text
+.
 3
---mN8pA
+--aB3x9
 ```
 
-Treat the new delimiter line as the completion signal. Do not look for an IPython prompt. Do not use `%cpaste` with `clikernel`. Do not invent your own request id or terminator.
+Treat the `.` line as request accepted, not execution complete. Treat the delimiter line as the completion signal. Do not look for an IPython prompt. Do not use `%cpaste` with `clikernel`. Do not invent your own request id or terminator.
 
-Python exceptions are rendered as normal notebook error output. Protocol/worker failures are rendered with readable XML-ish error tags, then followed by a fresh delimiter.
+Python exceptions are rendered as normal notebook error output. Protocol/worker failures are rendered with readable XML-ish error tags, then followed by the session delimiter.
 
 ## Output Shape
 
@@ -88,7 +95,7 @@ If there is exactly one non-empty stream, display object, execute result, or err
 
 ```text
 42
---Q7z2M
+--aB3x9
 ```
 
 For multiple non-empty outputs, the body uses readable XML-ish tags with raw, unescaped body text:
@@ -103,7 +110,7 @@ hello
 <execute_result>
 42
 </execute_result>
---Q7z2M
+--aB3x9
 ```
 
 `display_data` and `execute_result` choose a non-image MIME representation with markdown preferred over HTML, and images are ignored.
@@ -116,7 +123,9 @@ When using `exec_command` / `write_stdin` with `clikernel`, raise the tool-resul
 {"max_output_tokens": 50000, "yield_time_ms": 1000}
 ```
 
-For quick requests, `yield_time_ms=1000` is usually enough to receive the whole framed response. For long-running code, set a longer yield up front. Send a blank line to just poll.
+For quick requests, `yield_time_ms=1000` is usually enough to receive the acknowledgement and whole framed response. If you are expecting a quick response and do not see output, sending a blank line is a good quick poll: it is a real empty request, so an idle kernel answers with `.` and the session delimiter. If that does not come back quickly, the previous request is still running or the process is wedged.
+
+For long-running code, use `write_stdin(chars="")` with a longer timeout to read pending output without adding another request to the queue.
 
 Use raw triple-quoted strings by default for generated Markdown, docs, code snippets, regexes, commands, or examples:
 
@@ -169,4 +178,6 @@ Run `doc(skill_module)` by itself as the first inspection step. After the module
 
 Always inspect individual functions or classes with `doc(symbol)` before calling them. Summarize pyskills output to the user; do not dump full docs or large return values unless asked.
 
-For notebook work, prefer `pyskills.edit.view_nb` and related notebook APIs. `view_nb` shows the authored notebook source in the form a human is meant to read.
+Use `pyskills.edit` only for regular text files.
+
+For `.ipynb` work, import `pyskills.ipynb` and use its notebook cell viewing/editing APIs. `view_nb` shows the authored notebook source in the form a human is meant to read.
