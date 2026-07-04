@@ -35,7 +35,7 @@ That's the basic message. Specific examples and details follow.
 
 These are statistically overrepresented in AI output. Replace or delete on sight:
 
-- **Kill on sight:** delve, utilize, leverage (verb), facilitate, elucidate, embark, endeavor, encompass, multifaceted, tapestry, "a testament to", paradigm, synergy, holistic, catalyze, juxtapose, nuanced (as filler), realm, landscape (metaphorical), myriad, plethora
+- **Kill on sight:** delve, utilize, leverage (verb), facilitate, elucidate, embark, endeavor, encompass, multifaceted, tapestry, "a testament to", paradigm, synergy, holistic, catalyze, juxtapose, nuanced (as filler), realm, landscape (metaphorical), shape (as loose jargon for structure - "same shape", "the shape of the data/API/process" - fine as an actual geometric term, or literally referring to array/tensor dimensions), myriad, plethora
 - **Suspicious in clusters** (remove most of them): robust, comprehensive, seamless, cutting-edge, innovative, streamline, empower, foster, enhance, elevate, optimize, pivotal, intricate, profound, resonate, underscore, harness, navigate (metaphorical), cultivate, bolster, cornerstone, game-changer
 - **Replacements are almost always simpler words:** utilize->use, leverage->use, facilitate->help, robust->strong, comprehensive->complete, seamless->smooth, empower->let/help, foster->encourage, enhance->improve, optimize->improve.
 

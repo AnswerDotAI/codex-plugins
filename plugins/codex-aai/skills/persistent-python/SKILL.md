@@ -5,179 +5,30 @@ description: The preferred single tool to use for nearly all tasks that can be a
 
 # Persistent Python
 
-## Core Idea
+ALWAYS use a persistent background `clikernel` process for ALL Python work: writing code, editing code or notebooks, running or debugging anything, inspecting objects or packages, probing APIs, transforming data. It is the workbench for every task in this environment, not a tool you reach for occasionally -- if what you're doing could go through Python, it goes through clikernel. Do not fall back to `python -c`, shell heredocs, or ad hoc scripts.
 
-Use a persistent background `clikernel` process as the default tool workspace. This is the preferred single tool for nearly all Python-capable tasks because it keeps state across the conversation: imports, live objects, inspected docs, monkeypatches, cached results, API clients, and small experiments.
-
-Think of the session as the agent's notebook-style workbench. Prefer it over one-off Python scripts when you need to inspect runtime behavior, test ideas, call Python APIs, use pyskills, examine package state, run live probes, work through file-editing logic, or iterate on an implementation detail. Shell commands are still fine for file search, git, project test commands, and non-Python tools.
-
-`clikernel` is a small PyPI module available in this environment. It wraps `execnb.shell.CaptureShell`, runs IPython-compatible code from stdin, and uses a ready delimiter protocol. This gives a cleaner persistent Python process than an interactive terminal REPL: no echoed input, no prompt parsing, and no `%cpaste` dance.
-
-## Start Or Reuse
-
-Always work through one persistent `clikernel` process in a background PTY session. If one is already running for this conversation, keep using it; otherwise start one with:
-
-```bash
-clikernel
-```
-
-Start it as a PTY background session, normally with elevated permissions when the user wants access to global skill files or other paths outside the current workspace. `clikernel` sets safe default state directories when needed and disables terminal echo when stdin is a TTY. The normal home IPython/matplotlib dirs are expected to be writable in this environment, and execnb avoids importing matplotlib during startup.
-
-Do not start extra Python processes for this workflow unless `clikernel` is broken or the user explicitly asks. Do not close the process just for cleanup; leave it available for future turns. After a user closes and resumes a Codex session, the old background terminal may be gone without a proactive notification. If `write_stdin` returns `Unknown process id`, start a fresh `clikernel` process and redo imports, inspected docs, monkeypatches, and other required state.
-
-The bundled `clikernel` wrapper is an alternative if state dirs in writable tmp folders are needed. Resolve this path relative to this skill directory:
-
-```bash
-scripts/clikernel_repl.sh
-```
-
-## Protocol
-
-On startup, `clikernel` prints loading status followed by a random session delimiter. The delimiter is always `--` plus 5 alphanumeric characters:
-
-```text
-please wait, loading...
-loading complete. first delimiter:
---aB3x9
-```
-
-Any startup warnings are printed before the first delimiter.
-
-Treat that delimiter as the readiness signal, completion signal, and multiline terminator. It stays the same until the process exits.
-
-Send a single line to execute a single-line request:
-
-```text
-1+1
-```
-
-After the request is received, `clikernel` first prints an acknowledgement line:
-
-```text
-.
-```
-
-Then the response body is printed, followed by the same session delimiter:
-
-```text
-2
---aB3x9
-```
-
-Use a bare `--` line to start multiline input. End the block with the session delimiter exactly:
-
-```text
---
-def f(x):
-    return x + 1
-
-f(2)
---aB3x9
-```
-
-The acknowledgement is printed before execution starts. The output is followed by the same session delimiter:
-
-```text
-.
-3
---aB3x9
-```
-
-Treat the `.` line as request accepted, not execution complete. Treat the delimiter line as the completion signal. Do not look for an IPython prompt. Do not use `%cpaste` with `clikernel`. Do not invent your own request id or terminator.
-
-Python exceptions are rendered as normal notebook error output. Protocol/worker failures are rendered with readable XML-ish error tags, then followed by the session delimiter.
-
-## Output Shape
-
-`clikernel` renders notebook outputs with `fastcore.nbio.render_text`.
-
-If there is exactly one non-empty stream, display object, execute result, or error, the body is just the preferred text form:
-
-```text
-42
---aB3x9
-```
-
-For multiple non-empty outputs, the body uses readable XML-ish tags with raw, unescaped body text:
-
-```text
-<stdout>
-hello
-</stdout>
-<display_data mime="text/markdown">
-**shown**
-</display_data>
-<execute_result>
-42
-</execute_result>
---aB3x9
-```
-
-`display_data` and `execute_result` choose a non-image MIME representation with markdown preferred over HTML, and images are ignored.
-
-## Interaction Rules
-
-When using `exec_command` / `write_stdin` with `clikernel`, raise the tool-result limit and use a practical yield:
-
-```json
-{"max_output_tokens": 50000, "yield_time_ms": 1000}
-```
-
-For quick requests, `yield_time_ms=1000` is usually enough to receive the acknowledgement and whole framed response. If you are expecting a quick response and do not see output, sending a blank line is a good quick poll: it is a real empty request, so an idle kernel answers with `.` and the session delimiter. If that does not come back quickly, the previous request is still running or the process is wedged.
-
-For long-running code, use `write_stdin(chars="")` with a longer timeout to read pending output without adding another request to the queue.
-
-Use raw triple-quoted strings by default for generated Markdown, docs, code snippets, regexes, commands, or examples:
-
-```python
-content = r"""
-print('\n'.join(items))
-cmd = 'file:$a\nnew line'
-"""
-```
-
-Most multiline strings in this workflow are source artifacts where backslashes should be preserved. Use normal triple-quoted strings only when Python escape interpretation is deliberate. For nontrivial generated text, verify risky lines with `repr(...)`, a focused readback, or a small slice view before broad writes.
-
-Try the simple import or API call first before mutating environment, monkeypatching, or adding setup. Change session state only after the ordinary path fails and the reason is understood.
-
-For file-editing workflows, view the target slice first and make the smallest verified edit that handles the change. Avoid whole-file rewrites when a line/range/string operation is enough. For complex text edits, prefer exhash because it verifies line addresses and can apply multi-file writes atomically.
-
-## Critical Issues
-
-- Just like in jupyter, only the *last* expression is printed/returned. Therefore, e.g if you want to run doc() twice in a single kernel input, they will need `print(...)` if not the last expression.
-- Do *NOT* re-run `import` statements that you have previously run in this session. It is persistent, so once run, the import is done. Use `importlib.reload` if you modify a module and need to reload it.
-- Do *NOT* use `sys.path.insert` for any reason, ever. The environment is pre-configured with all projects being worked on already installed with `pip install -e`. All needed modules should already be in the env.
-- If the env is missing a needed module, STOP and ask the user.
-- Output tokens cost much more than input tokens. Aim for surgical use of tools/functions: inspect only the needed docs or lines, and do not dump large values unless the user asks.
-- Default to raw triple-quoted strings `r"""..."""` for most generated source artifacts. Avoid `'\n'` in strings when real newlines are clearer.
-
-## Pyskills
-
-Pyskills are Python capabilities available inside this persistent workspace. Discover them from `clikernel`:
+`clikernel` runs IPython-compatible code from stdin in one persistent session (state carries across requests), and everything else here builds on that. So your first use of it in every session is to bootstrap the rest: execute the following (as one multiline request), then follow the instructions it prints:
 
 ```python
 from pyskills import list_pyskills, doc
+import clikernel.skill, pyskills.skill
+print(doc(clikernel.skill))
+print(doc(pyskills.skill))
 list_pyskills()
 ```
 
-Orient with the core docs (using `print()` to avoid python repr noise):
+Those docs cover the CLI delimiter protocol, output shape, interaction rules, reload gotchas, and the pyskills workflow, and are not repeated here; `list_pyskills()` shows what tooling is available -- always prefer a relevant pyskill over ad hoc code.
 
-```python
-import pyskills.skill
-print(doc(pyskills.skill))
-```
+## Driving clikernel from Codex
 
-Before using a candidate pyskill, import it and inspect the module or specific callable:
+The instructions above ship with `clikernel` itself and are portable. The following is specific to running it from Codex:
 
-```python
-from pyskills import edit
-print(doc(edit))
-```
+- Work through ONE persistent `clikernel` process in a background PTY session. If one is already running for this conversation, keep using it; otherwise start `clikernel` as a PTY background session, normally with elevated permissions when the user wants access to global skill files or other paths outside the current workspace. Do not start extra Python processes unless `clikernel` is broken or the user explicitly asks, and do not close the process just for cleanup -- leave it available for future turns.
+- After a user closes and resumes a Codex session, the old background terminal may be gone without notification. If `write_stdin` returns `Unknown process id`, start a fresh `clikernel` process and redo imports, monkeypatches, and other required state.
+- The bundled wrapper `scripts/clikernel_repl.sh` (resolve relative to this skill directory) is an alternative if state dirs in writable tmp folders are needed.
+- When using `exec_command` / `write_stdin` with `clikernel`, raise the tool-result limit and use a practical yield: `{"max_output_tokens": 50000, "yield_time_ms": 1000}`. For quick requests, `yield_time_ms=1000` usually captures the acknowledgement and whole framed response. For long-running code, use `write_stdin(chars="")` with a longer timeout to read pending output without queueing another request.
+- Output tokens cost much more than input tokens -- be surgical about what you print.
 
-Run `doc(skill_module)` by itself as the first inspection step. After the module docs are clear, inspect individual functions or classes as needed.
+## Environment specifics
 
-Always inspect individual functions or classes with `doc(symbol)` before calling them. Summarize pyskills output to the user; do not dump full docs or large return values unless asked.
-
-Use `pyskills.edit` only for regular text files.
-
-For `.ipynb` work, import `pyskills.ipynb` and use its notebook cell viewing/editing APIs. `view_nb` shows the authored notebook source in the form a human is meant to read.
+- The env is pre-configured with every project being worked on already installed via `pip install -e`. Do *NOT* use `sys.path.insert` for any reason -- whatever module you need should already be importable. If it isn't, STOP and ask the user rather than patching the path.
