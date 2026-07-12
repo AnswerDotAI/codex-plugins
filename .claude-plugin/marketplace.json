@@ -6,6 +6,14 @@
       "name": "claude-aai",
       "source": "./plugins/claude-aai",
       "description": "Answer.AI skills for Claude Code, including a persistent clikernel Python workspace for live inspection, debugging, and experiments."
+    },
+    {
+      "name": "safecmd",
+      "description": "Auto-approve safe bash commands using safecmd's allowlist validation",
+      "source": "./plugins/safecmd",
+      "homepage": "https://github.com/AnswerDotAI/safecmd",
+      "category": "development",
+      "keywords": ["bash", "security", "auto-approve"]
     }
   ]
 }

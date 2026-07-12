@@ -4,10 +4,15 @@ Skills from Answer.AI for both Codex and Claude Code, built from shared sources 
 
 ## Plugins
 
-- `codex-aai` (Codex): `persistent-python`, `coding-patterns`, `nbdev-editing`, `write-prose`, and `codex-docs`.
-- `claude-aai` (Claude Code): the same skills except `codex-docs`.
+`codex-aai` (Codex) and `claude-aai` (Claude Code) carry the same skills, built from shared sources:
 
-The skills cover a persistent `clikernel` Python workspace for live inspection, debugging, and editing; fastai coding conventions; the nbdev notebook-as-source workflow; and human-sounding prose.
+- `persistent-python`: work in a persistent `clikernel` IPython session - the workbench for inspection, debugging, editing, and experiments, with the pyskills tool ecosystem.
+- `coding-patterns`: fastai coding style and conventions, including the TDD red-green testing process.
+- `nbdev-editing`: the nbdev workflow, where notebooks in `nbs/` are the source of truth.
+- `write-prose`: write prose that doesn't read as AI slop.
+- `codex-docs` (Codex only): answer questions about Codex behavior and configuration from the official documentation.
+
+`safecmd` (Claude Code) is separate: hooks that auto-approve safe bash commands using [safecmd](https://github.com/AnswerDotAI/safecmd)'s allowlist validation, so routine commands stop prompting for permission.
 
 ## Install: Codex
 
@@ -31,14 +36,15 @@ Restart Codex after installing.
 
 ## Install: Claude Code
 
-Add this repository as a plugin marketplace, then install the plugin:
+Add this repository as a plugin marketplace, then install either or both plugins:
 
 ```text
 /plugin marketplace add answerdotai/skill-plugins
-/plugin install claude-aai
+/plugin install claude-aai@answerdotai-skill-plugins
+/plugin install safecmd@answerdotai-skill-plugins
 ```
 
-Skills appear namespaced as `claude-aai:persistent-python` etc.
+Skills appear namespaced as `claude-aai:persistent-python` etc. Nothing further is needed: Claude reads a skill when its trigger applies, and `safecmd`'s hooks run on every Bash call automatically.
 
 ## Development
 
@@ -53,6 +59,8 @@ pytest -q           # build machinery tests (also runs a build)
 ```
 
 Generated outputs are committed, since installs pull the repo as-is.
+
+To ship a change: edit `src/`, run `./build.py`, commit, and bump the affected plugin's version in its `plugin.json`. Installed plugins are cached per version, so users only see changes after a version bump plus update/reinstall. For live local use of your own checkout, skip installing the skills plugin and symlink instead, e.g. `~/.claude/skills/persistent-python -> plugins/claude-aai/skills/persistent-python`: edits are then picked up on the next build, no reinstall needed.
 
 For local marketplace testing from this checkout:
 
