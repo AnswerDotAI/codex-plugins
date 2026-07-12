@@ -1,0 +1,4 @@
+interface:
+  display_name: "Codex Docs"
+  short_description: "Find current Codex behavior in official docs"
+  default_prompt: "Use $codex-docs to answer this Codex question from current official documentation."

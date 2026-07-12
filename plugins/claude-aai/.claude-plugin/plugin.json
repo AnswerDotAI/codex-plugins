@@ -1,0 +1,8 @@
+{
+  "name": "claude-aai",
+  "version": "0.1.0",
+  "description": "Answer.AI Claude Code skills, including a persistent clikernel Python workspace for live inspection, debugging, and experiments.",
+  "author": {"name": "Jeremy Howard, Answer.AI", "url": "https://answer.ai"},
+  "homepage": "https://answer.ai",
+  "license": "Apache-2.0"
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "nbdev Editing"
+  short_description: "Edit nbdev notebooks as the source of truth"
+  default_prompt: "Use $nbdev-editing when working in an nbdev project."

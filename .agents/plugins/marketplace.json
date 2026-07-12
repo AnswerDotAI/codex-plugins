@@ -1,7 +1,7 @@
 {
-  "name": "answerdotai-codex-plugins",
+  "name": "answerdotai-skill-plugins",
   "interface": {
-    "displayName": "Answer.AI Codex Plugins"
+    "displayName": "Answer.AI Skill Plugins"
   },
   "plugins": [
     {

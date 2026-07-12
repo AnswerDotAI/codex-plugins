@@ -5,9 +5,9 @@ description: The persistent clikernel Python session — Jeremy's preferred sing
 
 # Persistent Python
 
-ALWAYS use a persistent background `clikernel` process for ALL Python work: writing code, editing code or notebooks, running or debugging anything, inspecting objects or packages, probing APIs, transforming data. It is the workbench for every task in this environment, not a tool you reach for occasionally -- if what you're doing could go through Python, it goes through clikernel. Do not fall back to `python -c`, shell heredocs, or ad hoc scripts.
+ALWAYS use the `clikernel` MCP server for ALL Python work: writing code, editing code or notebooks, running or debugging anything, inspecting objects or packages, probing APIs, transforming data. It is the workbench for every task in this environment, not a tool you reach for occasionally -- if what you're doing could go through Python, it goes through clikernel. Do not fall back to `python -c`, Bash heredocs, or ad hoc scripts.
 
-`clikernel` runs IPython-compatible code from stdin in one persistent session. On first use in every session, follow any bootstrap instructions printed at startup. Otherwise execute this as one multiline request:
+The server's `execute` tool runs Python code in one persistent IPython session (state carries across calls), and everything else here builds on that. So your first use of it in every session is to bootstrap the rest. But first check the clikernel MCP server instructions already in your context: a startup script may have run, and its printed output there tells you what's already imported -- if it printed a bootstrap snippet, run that snippet rather than re-importing. Otherwise execute the following two cells, then follow the instructions they print:
 
 ```python
 from pyskills import list_pyskills, doc
@@ -15,19 +15,17 @@ import clikernel.skill as clik, pyskills.skill as pysk, pyskills.edit as pyse, e
 from pyskills.edit import *
 from exhash.skill import *
 doc(clik, pysk, pyse, exh)
+```
+
+then, as a second cell (only a cell's last expression displays, so two displays means two cells):
+
+```python
 list_pyskills()
 ```
 
-Then complete ALL practice tasks printed at startup (the clikernel dojo: `from clikernel.dojo import *; dojo_start()`) before any other work. This is an unconditional gate in EVERY session -- including ones that only read files or search directories -- and no softer phrasing anywhere ('to practice...') makes it optional.
+Then complete ALL practice tasks mentioned in the server instructions (the clikernel dojo: `from clikernel.dojo import *; dojo_start()`) before any other work. This is an unconditional gate in EVERY session -- including ones that only read files or search directories -- and no softer phrasing anywhere ('to practice...') makes it optional.
 
-Those docs cover the CLI protocol, output shape, notebook magics, interaction rules, reload gotchas, and the pyskills workflow, and are not repeated here; `list_pyskills()` shows what tooling is available -- always prefer a relevant pyskill over ad hoc code.
-
-## Driving clikernel from Codex
-
-- Work through ONE persistent `clikernel` process in a background PTY session. If one is already running for this conversation, keep using it; otherwise start `clikernel` as a PTY background session, normally with elevated permissions when the user wants access to global skill files or other paths outside the current workspace. Do not start extra Python processes unless `clikernel` is broken or the user explicitly asks, and do not close the process just for cleanup -- leave it available for future turns.
-- After a user closes and resumes a Codex session, the old background terminal may be gone without notification. If `write_stdin` returns `Unknown process id`, start a fresh `clikernel` process and redo imports, monkeypatches, and other required state.
-- When using `exec_command` / `write_stdin` with `clikernel`, raise the tool-result limit and use a practical yield: `{"max_output_tokens": 50000, "yield_time_ms": 1000}`. For quick requests, `yield_time_ms=1000` usually captures the acknowledgement and whole framed response. For long-running code, use `write_stdin(chars="")` with a longer timeout to read pending output without queueing another request.
-- Output tokens cost much more than input tokens -- be surgical about what you print.
+Those docs cover the tools, notebook magics, output shape, interaction rules, reload gotchas, and the pyskills workflow, and are not repeated here; `list_pyskills()` shows what tooling is available -- always prefer a relevant pyskill over ad hoc code.
 
 ## Environment specifics
 
@@ -50,3 +48,5 @@ The following apply specifically to this environment:
 - When searching in order to edit, stay on the address-preserving route end to end: `rg(pat, path, lnhash=True)` returns hits already formatted as `lineno|hash|` exhash addresses, and `nbrg` returns cell ids, which `lnhashview_cell(path, id)` turns into line addresses for `exhash_cell`. If reaching an edit address seems to need arithmetic, scraping, or a guessed hash, a step on this route was skipped.
 - In nbdev repos, search with `nbrg`, not grep over the generated `.py` files -- even for quick read-only peeks like listing a module's functions. nbrg searches the source of truth (the `.py` can be stale mid-edit), skips outputs, avoids shell escaping, and returns cell ids: the address any follow-up `view_cell` or cell edit needs. Grep the `.py` side only for generated-only artifacts (`__all__`, `_modidx.py`), non-notebook files, or when you need module line numbers to pair with `info_md`.
 - Habit is the enemy here: our research shows that falling back to the tools you were RLHF'd on in post-training (the harness's built-in read/edit tools, grep, cat, `Path.read_text()`, ad hoc scripts) doesn't just make clumsier edits -- it correlates with thinking less and being less creative across the whole task. Treat the habitual reach as a cue that you've stopped choosing: pause and pick the designed tool deliberately.
+- Claude Code settings are plain JSON: `~/.claude/settings.json` (user-global), `.claude/settings.json` (project, committed), `.claude/settings.local.json` (project, personal); later files override earlier. Edit them with the normal kernel tooling (`lnhashview_file` + `%%exhash`), merging into existing keys rather than replacing, then verify with `json.load`. Useful facts: a BARE tool name in `permissions.deny` removes that tool from the system prompt entirely, while a scoped rule (`Bash(rm *)`) only blocks matching calls; hooks live under `"hooks"` keyed by event (PreToolUse, SessionStart, UserPromptSubmit, ...); `skillOverrides` hides bundled skills (`"off"`, or `"user-invocable-only"` to keep the slash command usable by the user). Settings load at startup, so changes take effect from the next session.
+- Narration between consecutive tool calls must ride inside a tool call, since mid-run assistant text is neither shown nor saved (anthropics/claude-code#75900). For clikernel work that means a separate `execute` call containing only a Python comment: one or two prose lines starting `#`, saying what the last result showed and what comes next. It runs as a no-op, renders in the transcript, and persists across resume. Retire this practice when the issue is fixed.

@@ -1,8 +1,8 @@
 {
   "name": "codex-aai",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Answer.AI Codex skills and tools.",
-  "repository": "https://github.com/answerdotai/codex-plugins",
+  "repository": "https://github.com/answerdotai/skill-plugins",
   "author": {
     "name": "Jeremy Howard, Answer.AI",
     "url": "https://answer.ai"

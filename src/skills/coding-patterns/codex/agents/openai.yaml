@@ -1,0 +1,4 @@
+interface:
+  display_name: "Coding Patterns"
+  short_description: "Apply Jeremy's coding style and conventions"
+  default_prompt: "Use $coding-patterns before reading or changing project files."

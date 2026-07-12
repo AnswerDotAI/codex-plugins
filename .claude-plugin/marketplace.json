@@ -1,0 +1,11 @@
+{
+  "name": "answerdotai-skill-plugins",
+  "owner": {"name": "Jeremy Howard, Answer.AI"},
+  "plugins": [
+    {
+      "name": "claude-aai",
+      "source": "./plugins/claude-aai",
+      "description": "Answer.AI skills for Claude Code, including a persistent clikernel Python workspace for live inspection, debugging, and experiments."
+    }
+  ]
+}
