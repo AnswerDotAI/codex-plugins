@@ -1,6 +1,6 @@
 {
   "name": "codex-aai",
-  "version": "0.1.4",
+  "version": "0.1.35",
   "description": "Answer.AI Codex skills and tools.",
   "repository": "https://github.com/answerdotai/skill-plugins",
   "author": {

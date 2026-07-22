@@ -10,7 +10,7 @@ Skills from Answer.AI for both Codex and Claude Code, built from shared sources 
 - `coding-patterns`: fastai coding style and conventions, including the TDD red-green testing process.
 - `nbdev-editing`: the nbdev workflow, where notebooks in `nbs/` are the source of truth.
 - `write-prose`: write prose that doesn't read as AI slop.
-- `codex-docs` (Codex only): answer questions about Codex behavior and configuration from the official documentation.
+- `codex-docs` (Codex) / `claude-code-docs` (Claude Code): answer questions about the tool's behavior and configuration from its official documentation; one shared source (`src/skills/docs/`) with per-tool names and URLs.
 
 `safecmd` (Claude Code) is separate: hooks that auto-approve safe bash commands using [safecmd](https://github.com/AnswerDotAI/safecmd)'s allowlist validation, so routine commands stop prompting for permission.
 
@@ -48,19 +48,18 @@ Skills appear namespaced as `claude-aai:persistent-python` etc. Nothing further 
 
 ## Development
 
-Each skill has ONE source, in `src/skills/<name>/SKILL.md`. Regions wrapped in `<!-- codex -->...<!-- /codex -->` or `<!-- claude -->...<!-- /claude -->` (whole-line or inline) appear only in that tool's output; everything else is shared. Tool-specific extras (e.g. `agents/openai.yaml` for Codex) live in `src/skills/<name>/<tool>/` and are copied verbatim.
+Each skill has ONE source, in `src/skills/<name>/SKILL.md`: a jinja2 template rendered once per tool with `tool` (`codex` or `claude`) and `name` (that tool's built skill name) in context. Shared text stays bare; tool-specific text goes in `{% if tool == 'codex' %}...{% else %}...{% endif %}` blocks or `{{ }}` substitutions. Tool-specific extras (e.g. `agents/openai.yaml` for Codex) live in `src/skills/<name>/<tool>/` and are copied verbatim.
 
 Never edit the generated files under `plugins/*/skills/` - edit the source and rebuild:
 
 ```bash
-./build.py          # regenerate plugins/codex-aai/skills/ and plugins/claude-aai/skills/
+./build.py          # regenerate the plugin skill trees, bumping changed plugins (--no-bump to skip)
 ./build.py --check  # exit nonzero if any generated file is stale (for CI)
-pytest -q           # build machinery tests (also runs a build)
 ```
 
 Generated outputs are committed, since installs pull the repo as-is.
 
-To ship a change: edit `src/`, run `./build.py`, commit, and bump the affected plugin's version in its `plugin.json`. Installed plugins are cached per version, so users only see changes after a version bump plus update/reinstall. For live local use of your own checkout, skip installing the skills plugin and symlink instead, e.g. `~/.claude/skills/persistent-python -> plugins/claude-aai/skills/persistent-python`: edits are then picked up on the next build, no reinstall needed.
+To ship a change: edit `src/`, run `./build.py` (it bumps the version of each plugin whose output changed; `--no-bump` to skip), and commit. Installed plugins are cached per version, so users only see changes after a version bump plus update/reinstall. For live local use of your own checkout, skip installing the skills plugin and symlink instead, e.g. `~/.claude/skills/persistent-python -> plugins/claude-aai/skills/persistent-python`: edits are then picked up on the next build, no reinstall needed.
 
 For local marketplace testing from this checkout:
 

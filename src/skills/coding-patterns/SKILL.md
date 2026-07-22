@@ -39,6 +39,7 @@ Write any non-trivial string literal as a raw string (`r"..."` / `r"""..."""`): 
 ## Style Checker (chkstyle)
 
 Run `chkstyle {path}` to check fastai style (only include path if needed). But use judgment - chkstyle is a hint, not gospel.
+In nbdev projects, point it at the notebooks (`chkstyle nbs/00_core.ipynb`), not the exported `.py`: the notebook run also checks example and test cells, which never reach the module.
 
 ## Config Patterns
 
@@ -52,6 +53,8 @@ Read from standard locations rather than duplicating config:
 ## Versioning: Bump After Release
 
 Versions are bumped immediately *after* release, so the tree always carries the next release's version. Hence a sibling dep pin can be written before it ships (`foo>=<foo's local version>`), releasing means shipping what's there (no suffix machinery, no bump step to forget), and bumping is part of releasing - Jeremy's step, never part of a change.
+
+This convention is for Python projects. Other artifact types version at change time instead: for example, the Claude Code plugins in skill-plugins bump automatically when `./build.py` regenerates a changed output.
 
 ## Project Layout
 
@@ -68,11 +71,19 @@ myproject/
 
 ## Testing
 
-- ALWAYS use TDD-style red-green testing: write the test FIRST, run it to see it fail, THEN fix the code, then run again to see it pass
-- Prefer as few tests as possible: a single test that walks through many checks is more readable and faster than many small tests
-- Always create real test files, never ad-hoc python commands - tests lock in behavior for future refactoring
-- Assert the logic, not incidentals: check what the behavior guarantees, never byte-exact renderings, exact reprs, or field order. A test that compares a whole output string locks in formatting decisions that were never the point, and breaks when an unrelated formatter or environment changes (e.g. assert the content appears in a markdown display block, not the display's exact payload)
-  - NEVER use tests to "lock in" behavior, unless that exact behavior really is a key part of the logic or contract that must always be true forever
+All code has writing, maintenance, and readability costs - *especially* tests: every test must be kept passing forever, gets read by every future contributor, and must be revised whenever the behavior it pins changes. So never write a test as a reflex, and don't aim for anywhere near 100% coverage. A test earns its place only when:
+
+- it documents an idea: in nbdev notebooks, tests ARE the documentation (see the nbdev skill), or
+- the logic is intricate enough that you had to think carefully to get it right - edge cases, parsing, arithmetic, tricky conditionals: the places a future change could silently break it, or
+- the code assumes something about an external system (a file format, an API's response shape, another tool's behavior) that is somewhat likely to change one day, and we want to hear about it when the assumption is violated. These must exercise the real thing - a mock just re-states our assumption - so they're usually the slow-marked tests
+
+Wiring and orchestration get zero tests: re-exports, delegations, one-line glue, functions that just sequence calls to other tools. A test there only asserts that Python works, and pins down internals we may want to change. Strong tell: if a test needs recording fakes or mock collaborators to reach the code, it's testing a transcript of the implementation, not logic - extract the logic into a small pure function and test that, or don't test at all.
+
+IF you add a test, ALWAYS work red-green: write it FIRST, run it to see it fail, THEN make the change, then run it again to see it pass.
+
+- Prefer as few tests as possible: a single test that walks through many checks is more readable and faster than many small ones
+- A check worth keeping goes in a real test file or notebook cell, never left as an ad-hoc command. In a notebook, the checks made while exploring often ARE the narrative - each one both documents what we needed to know and keeps guarding it - so they stay as example cells; in a pytest file, an exploratory check survives only if it meets one of the criteria above
+- Assert the logic, not incidentals: check what the behavior guarantees, never byte-exact renderings, exact reprs, or field order. A test that compares a whole output string locks in formatting decisions that were never the point (e.g. assert the content appears in a markdown display block, not the display's exact payload). NEVER use tests to "lock in" behavior, unless that exact behavior really is a key part of the logic or contract that must always be true forever
 - Use `pytest -q` (not `python -m pytest`, which prompts for permission); nbdev projects use `nbdev-test` (see the nbdev-editing skill)
 - Don't run slow-marked tests until finishing a session, or after a change likely to directly impact them
 
