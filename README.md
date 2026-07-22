@@ -1,5 +1,7 @@
 # Answer.AI Skill Plugins
 
+** DEPRECATED** - use aai-coding repo instead.
+
 Skills from Answer.AI for both Codex and Claude Code, built from shared sources so the two stay in sync.
 
 ## Plugins
